@@ -1,0 +1,16 @@
+# Generated build output (recreate with ./build.sh)
+build/
+screens/
+
+# Never commit signing keys
+*.jks
+*.keystore
+
+# Python / Node caches
+__pycache__/
+*.pyc
+node_modules/
+
+# Editor / OS files
+.DS_Store
+*.swp
