@@ -45,12 +45,24 @@ require('fs').mkdirSync(SHOTS, { recursive: true });
   await page.click('.overlay [data-act="home"]');
 
   // Each free-play game mounts and responds to input.
-  for (const id of ['sudoku', 'flow', 'slide', 'merge', 'mines', 'code']) {
+  for (const id of ['sudoku', 'flow', 'memo', 'slide', 'merge', 'mines', 'code']) {
     await page.click('[data-act="play"][data-game="' + id + '"]');
     await page.waitForSelector('.board-panel');
     await page.waitForTimeout(120);
     await page.screenshot({ path: SHOTS + '/game-' + id + '.png', fullPage: true });
     console.log('mounted', id);
+    if (id === 'memo') {
+      await page.waitForSelector('.memo-grid:not(.previewing)', { timeout: 8000 });
+      const fronts = await page.$$eval('.mcard .mfront', els => els.map(e => e.textContent.trim()));
+      const first = fronts[0];
+      const twin = fronts.indexOf(first, 1);
+      await page.click('[data-act="mcard"][data-i="0"]');
+      await page.click('[data-act="mcard"][data-i="' + twin + '"]');
+      const pairs = await page.textContent('#hud-pairs');
+      if (!pairs.startsWith('1/')) throw new Error('memo pair did not match: ' + pairs);
+      await page.click('[data-act="hint"]');
+      console.log('memo match ok');
+    }
     if (id === 'slide') {
       const before = await page.textContent('#hud-moves');
       const tiles = await page.$$eval('.tile', els => els.map(e => e.textContent.trim()));

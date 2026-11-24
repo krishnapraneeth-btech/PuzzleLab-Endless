@@ -43,8 +43,8 @@ PY
   -A "$BUILD/apkassets" \
   --min-sdk-version 24 \
   --target-sdk-version 34 \
-  --version-code 1 \
-  --version-name 1.0 \
+  --version-code 2 \
+  --version-name 1.1 \
   "$BUILD/compiled.flata"
 
 # 3. Java -> DEX.
@@ -67,7 +67,7 @@ if [ ! -f "$KS" ]; then
     -dname "CN=Puzzle Lab, OU=Offline Games, O=Puzzle Lab, C=IN" >/dev/null 2>&1
 fi
 
-FINAL="/home/user/PuzzleLab-Endless-v1.0.apk"
+FINAL="/home/user/PuzzleLab-Endless-v1.1.apk"
 "$BT/apksigner" sign \
   --ks "$KS" --ks-key-alias puzzlelab \
   --ks-pass pass:puzzlelab123 --key-pass pass:puzzlelab123 \

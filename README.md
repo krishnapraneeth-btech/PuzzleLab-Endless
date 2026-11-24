@@ -4,7 +4,7 @@ A self-contained, offline puzzle game with procedurally generated levels that ke
 
 ## Install
 
-1. Copy `PuzzleLab-Endless-v1.0.apk` to your Android phone (Android 7.0 / API 24 or newer).
+1. Copy `PuzzleLab-Endless-v1.1.apk` to your Android phone (Android 7.0 / API 24 or newer).
 2. Open the file. Android may ask to allow installs from unknown sources — allow it for your file manager/browser, then install.
 3. Open **Puzzle Lab** from the app drawer.
 
@@ -16,12 +16,13 @@ The APK is signed with a locally generated release key (`tools/release.jks`) usi
 | --- | --- |
 | Sudoku | Fewer clues (45 → 22), always generated with a unique solution |
 | Flow Link | Grids grow 4×4 → 9×9 with more colour pairs; every board is generated from a randomised Hamiltonian path, so it is always solvable |
+| Memo Match | Kid-friendly memory flipping: 2×2 → 6×6 cards, 2 → 18 friendly pairs, and the starting "remember them" preview shrinks from ~3.3 s to <1 s |
 | Tile Shift | 3×3 → 8×8, longer legal-only scrambles |
 | Merge | 4×4 → 5×5, higher target tiles |
 | Minefield | 6×6 → 16×16 with rising mine density; first tap is always safe, 3 shields |
 | Code Breaker | 3 → 6 slots, 4 → 8 colours, fewer attempts, repeats enabled later |
 
-- **Endless Run** cycles through all six games; every cleared level generates a harder next one. There is no final level or level cap.
+- **Endless Run** cycles through all seven games; every cleared level generates a harder next one. There is no final level or level cap.
 - **Free Play** gives each game its own endless level counter.
 - Hints, undo where meaningful, restart, pause-safe timer, local stats, star ratings, WebAudio sound effects, haptics, three neon accent themes.
 

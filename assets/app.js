@@ -11,6 +11,7 @@
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg>',
     sudoku: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>',
     flow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 5h7a4 4 0 0 1 0 8H8a3 3 0 0 0 0 6h11"/><circle cx="5" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="19" cy="19" r="2" fill="currentColor" stroke="none"/></svg>',
+    memo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="14" rx="2.5"/><path d="M8 3.5h10.5A3 3 0 0 1 21.5 6.5v10.5"/><path d="m9 10.2 1.4 2.8 3.1.45-2.25 2.2.53 3.1L9 17.45l-2.78 1.5.53-3.1-2.25-2.2 3.1-.45z"/></svg>',
     slide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/><path d="m10 11 2 2 2-2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     merge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h6l4 5h6M4 17h6l4-5"/><path d="m17 9 3 3-3 3M7 5l2 2-2 2"/></svg>',
     mines: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>',
@@ -24,6 +25,7 @@
   const GAMES = [
     { id: 'sudoku', name: 'SUDOKU', desc: 'Nine rows. One truth.', icon: 'sudoku', c1: '#22e6ff' },
     { id: 'flow', name: 'FLOW LINK', desc: 'Connect every pair.', icon: 'flow', c1: '#a878ff' },
+    { id: 'memo', name: 'MEMO MATCH', desc: 'Find the friendly pairs!', icon: 'memo', c1: '#ff8ad8' },
     { id: 'slide', name: 'TILE SHIFT', desc: 'Slide order from chaos.', icon: 'slide', c1: '#3dffa6' },
     { id: 'merge', name: 'MERGE', desc: 'Combine to the target.', icon: 'merge', c1: '#ffc857' },
     { id: 'mines', name: 'MINEFIELD', desc: 'Clear the grid safely.', icon: 'mines', c1: '#ff5a7a' },
@@ -32,6 +34,7 @@
   const GMAP = {};
   GAMES.forEach(g => GMAP[g.id] = g);
 
+  const MEMO_ICONS = ['🐶', '🐱', '🦊', '🐼', '🦁', '🐸', '🐵', '🐰', '🐻', '🐨', '🐯', '🦄', '🐝', '🦋', '🐢', '🐙', '🦖', '🚀'];
   const FLOW_COLORS = ['#22e6ff', '#ff5ce0', '#3dffa6', '#ffc857', '#a878ff', '#ff6b6b', '#4d8dff', '#ff9f43', '#5ef2d0', '#f5f7ff', '#c77dff', '#a3ff5e'];
   const CODE_COLORS = ['#22e6ff', '#ff5ce0', '#3dffa6', '#ffc857', '#a878ff', '#ff6b6b', '#4d8dff', '#ff9f43'];
 
@@ -40,7 +43,7 @@
     return {
       settings: { sound: true, haptics: true, accent: 'cyan' },
       stats: { solved: 0, perfect: 0, hints: 0, run: 0, bestRun: 0, byGame: {} },
-      levels: { sudoku: 1, flow: 1, slide: 1, merge: 1, mines: 1, code: 1 },
+      levels: { sudoku: 1, flow: 1, memo: 1, slide: 1, merge: 1, mines: 1, code: 1 },
       runLevel: 1
     };
   }
@@ -98,10 +101,14 @@
     timerId = setInterval(() => { const el = $('#timeVal'); if (el && G && !G.complete) el.textContent = fmt(elapsed(G)); }, 1000);
   }
   function stopTimer() { clearInterval(timerId); timerId = null; if (G && !G.complete) G.frozen = elapsed(G); }
+  function clearGameTimers() {
+    if (G && G.previewTimer) { clearTimeout(G.previewTimer); G.previewTimer = null; }
+    if (G && G.peekTimers) { G.peekTimers.forEach(clearTimeout); G.peekTimers = []; }
+  }
 
   /* ---------------- screens ---------------- */
   function renderHome() {
-    screen = 'home'; stopTimer(); G = null; closeOverlay();
+    screen = 'home'; stopTimer(); clearGameTimers(); G = null; closeOverlay();
     const nextGame = C.gameForRun(S.runLevel);
     const runLabel = S.runLevel > 1 ? 'CONTINUE RUN · LEVEL ' + S.runLevel : 'START ENDLESS RUN';
     const total = S.stats.solved;
@@ -110,7 +117,7 @@
       '<button class="icon-btn" data-act="settings" aria-label="Settings">' + SVG.gear + '</button></header>' +
       '<section class="hero"><div class="eyebrow">∞ No final level</div>' +
       '<h1>One more puzzle.<br><em>Forever.</em></h1>' +
-      '<p>Six puzzle families, procedurally generated and endlessly scaling from gentle warm-ups to mind-bending master tiers.</p>' +
+      '<p>Seven puzzle families, procedurally generated and endlessly scaling from gentle warm-ups to mind-bending master tiers.</p>' +
       '<button class="hero-btn" data-act="run"><span>' + runLabel + '</span><span class="arrow">→</span></button>' +
       '<div class="hero-meta"><span class="pill good">OFFLINE · NO ADS</span><span class="pill">ZERO PERMISSIONS</span><span class="pill">SAVES LOCALLY</span></div></section>' +
       '<div class="stats"><div class="stat"><b>' + total + '</b><span>Puzzles solved</span></div>' +
@@ -154,6 +161,7 @@
 
   /* ---------------- game lifecycle ---------------- */
   function startGame(id, level, mode) {
+    clearGameTimers();
     if (!GMAP[id]) id = 'sudoku';
     level = Math.max(1, level | 0);
     const seed = C.hashSeed(id + '|' + level + '|' + (mode === 'run' ? 'r' : 'f'));
@@ -208,7 +216,7 @@
   function winGame() {
     if (G.complete) return;
     G.complete = true; G.frozen = elapsed(G); stopTimer();
-    const stars = Math.max(1, 3 - G.hints - (G.mistakes >= 3 ? 1 : 0));
+    const stars = G.instance.stars ? G.instance.stars(G) : Math.max(1, 3 - G.hints - (G.mistakes >= 3 ? 1 : 0));
     S.stats.solved++; S.stats.hints += 0;
     if (G.hints === 0 && G.mistakes === 0) S.stats.perfect++;
     S.stats.byGame[G.id] = Math.max(S.stats.byGame[G.id] || 0, G.level);
@@ -488,6 +496,100 @@
         { key: 'hints', label: 'Hints', value: g.hints }, { key: 'size', label: 'Grid', value: d.cfg.w + '×' + d.cfg.h }];
     },
     status(g) { return g.data.cfg.pairs.length + ' colour pairs · drag from one dot to its twin · fill every square'; }
+  };
+
+  /* MEMO MATCH — kids' memory game */
+  MODULES.memo = {
+    create(g) {
+      const m = C.generateMemo(g.rnd, g.level);
+      m.flipped = [];
+      m.matched = new Set();
+      m.busy = false;
+      m.preview = true;
+      return m;
+    },
+    mount(host, g) {
+      const d = g.data;
+      host.innerHTML = '<div class="memo-buddy"><span>★</span> Remember the little friends!</div>' +
+        '<div class="memo-grid" id="mmGrid"></div>';
+      const grid = $('#mmGrid');
+      grid.style.gridTemplateColumns = 'repeat(' + d.cols + ',1fr)';
+      grid.innerHTML = d.cards.map((icon, i) =>
+        '<button class="mcard" data-act="mcard" data-i="' + i + '" aria-label="Memory card ' + (i + 1) + '">' +
+        '<span class="mcard-inner"><span class="mface mback">✦</span><span class="mface mfront">' + MEMO_ICONS[icon] + '</span></span></button>').join('');
+      this.update(g);
+      g.peekTimers = [];
+      g.previewTimer = setTimeout(() => {
+        g.previewTimer = null; d.preview = false;
+        if (grid && grid.isConnected) grid.classList.remove('previewing');
+        this.update(g);
+      }, d.previewMs);
+    },
+    update(g) {
+      const d = g.data, grid = $('#mmGrid');
+      if (!grid) return;
+      grid.classList.toggle('previewing', d.preview);
+      Array.prototype.forEach.call(grid.children, (el, i) => {
+        el.classList.toggle('flipped', d.flipped.indexOf(i) >= 0 || d.matched.has(i));
+        el.classList.toggle('matched', d.matched.has(i));
+      });
+      const note = $('#boardNote');
+      if (note) note.textContent = d.preview ? 'Take a good look — they hide in a moment!' : this.status(g);
+    },
+    click(g, ds) {
+      if (ds.act !== 'mcard') return false;
+      const d = g.data, i = +ds.i;
+      if (d.preview || d.busy || d.matched.has(i) || d.flipped.indexOf(i) >= 0) return true;
+      d.flipped.push(i); tone('tap'); buzz(8); this.update(g);
+      if (d.flipped.length === 2) {
+        g.moves++;
+        const a = d.flipped[0], b = d.flipped[1];
+        d.busy = true;
+        const grid = $('#mmGrid');
+        if (d.cards[a] === d.cards[b]) {
+          d.matched.add(a); d.matched.add(b); d.flipped = []; d.busy = false;
+          tone('good'); buzz([18, 18]); this.update(g);
+          const left = d.pairs - d.matched.size / 2;
+          if (left === 0) checkWin();
+          else if (left === 1) toast('One more pair — you can do it!');
+        } else {
+          g.mistakes++; tone('bad');
+          if (grid) { grid.children[a].classList.add('wrong'); grid.children[b].classList.add('wrong'); }
+          g.peekTimers.push(setTimeout(() => {
+            d.flipped = []; d.busy = false;
+            if (grid && grid.isConnected) { grid.children[a].classList.remove('wrong'); grid.children[b].classList.remove('wrong'); }
+            this.update(g);
+          }, 720));
+        }
+      }
+      updateHud(); return true;
+    },
+    hint(g) {
+      const d = g.data;
+      if (d.preview) return false;
+      for (let i = 0; i < d.cards.length; i++) {
+        if (d.matched.has(i)) continue;
+        for (let j = i + 1; j < d.cards.length; j++) {
+          if (d.matched.has(j) || d.cards[i] !== d.cards[j]) continue;
+          const grid = $('#mmGrid');
+          if (grid) { grid.children[i].classList.add('peek'); grid.children[j].classList.add('peek'); }
+          g.peekTimers.push(setTimeout(() => {
+            if (grid && grid.isConnected) { grid.children[i].classList.remove('peek'); grid.children[j].classList.remove('peek'); }
+          }, 1300));
+          toast('Peek at these two friends!'); return true;
+        }
+      }
+      return false;
+    },
+    isWon(g) { return g.data.matched.size === g.data.cards.length; },
+    stars(g) { return Math.max(1, 3 - g.hints - (g.moves > g.data.pairs * 2 ? 1 : 0)); },
+    hud(g) { return [
+      { key: 'time', label: 'Time', value: fmt(elapsed(g)) },
+      { key: 'pairs', label: 'Pairs', value: (g.data.matched.size / 2) + '/' + g.data.pairs, cls: 'good' },
+      { key: 'moves', label: 'Tries', value: g.moves },
+      { key: 'hints', label: 'Peeks', value: g.hints }
+    ]; },
+    status(g) { return 'Tap two matching friends · the look time gets shorter every level'; }
   };
 
   /* SLIDING TILE */

@@ -107,7 +107,23 @@ for (const level of [1, 7, 20, 90]) {
   const f = C.feedbackCode(g, code.code);
   ok(f.exact === code.length - 1, 'feedback partial case');
 }
-ok(C.gameForRun(1) === 'sudoku' && C.gameForRun(7) === 'sudoku', 'run cycles');
+for (const level of [1, 2, 5, 12, 25, 60]) {
+  for (let trial = 0; trial < 5; trial++) {
+    const rnd = C.mulberry32(C.hashSeed('memo' + level + trial));
+    const m = C.generateMemo(rnd, level);
+    ok(m.cards.length === m.pairs * 2, 'memo card count');
+    ok(m.cols * m.rows === m.cards.length, 'memo grid fits cards');
+    const counts = new Array(m.pairs).fill(0);
+    m.cards.forEach(v => counts[v]++);
+    ok(counts.every(c => c === 2), 'memo pairs are exactly two each');
+    ok(m.cards.every(v => v >= 0 && v < m.pairs), 'memo icon indices valid');
+    ok(m.previewMs >= 850 && m.previewMs <= 3300, 'memo preview time bounds');
+  }
+}
+ok(C.generateMemo(C.mulberry32(1), 2).previewMs < C.generateMemo(C.mulberry32(1), 1).previewMs, 'preview shortens with level');
+ok(C.generateMemo(C.mulberry32(1), 100).pairs <= 18, 'memo grid stays screen-friendly');
+ok(C.gameForRun(1) === 'sudoku' && C.gameForRun(8) === 'sudoku', 'run cycles');
+ok(C.gameForRun(3) === 'memo', 'memo joins the run');
 ok(C.tier(100) === 'LEGENDARY', 'tier never ends');
 
 console.log('All ' + assertions + ' assertions passed.');

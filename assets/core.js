@@ -299,6 +299,22 @@
     return { mines: set, counts: counts };
   }
 
+  /* ---------------- MEMO MATCH (kids) ---------------- */
+  function generateMemo(rnd, level) {
+    const steps = [2, 3, 4, 6, 8, 10, 12, 15, 18];
+    const layouts = { 2: [2, 2], 3: [3, 2], 4: [4, 2], 6: [4, 3], 8: [4, 4],
+                      10: [5, 4], 12: [6, 4], 15: [6, 5], 18: [6, 6] };
+    const pairs = steps[clamp(Math.floor((level - 1) / 3), 0, steps.length - 1)];
+    const cols = layouts[pairs][0], rows = layouts[pairs][1];
+    const cards = [];
+    for (let i = 0; i < pairs; i++) { cards.push(i); cards.push(i); }
+    shuffle(cards, rnd);
+    return {
+      pairs: pairs, cols: cols, rows: rows, cards: cards,
+      previewMs: clamp(3300 - level * 100, 850, 3300)
+    };
+  }
+
   /* ---------------- CODE BREAKER ---------------- */
   function generateCode(rnd, level) {
     const length = clamp(3 + Math.floor((level - 1) / 5), 3, 6);
@@ -328,7 +344,7 @@
   }
 
   /* ---------------- SHARED META ---------------- */
-  const GAME_IDS = ['sudoku', 'flow', 'slide', 'merge', 'mines', 'code'];
+  const GAME_IDS = ['sudoku', 'flow', 'memo', 'slide', 'merge', 'mines', 'code'];
   function tier(level) {
     if (level <= 4) return 'NOVICE';
     if (level <= 9) return 'EASY';
@@ -347,6 +363,7 @@
     newMerge: newMerge, mergeMove: mergeMove, mergeHint: mergeHint,
     gridNeighbors: gridNeighbors,
     generateMines: generateMines, placeMines: placeMines,
+    generateMemo: generateMemo,
     generateCode: generateCode, feedbackCode: feedbackCode,
     GAME_IDS: GAME_IDS, tier: tier, gameForRun: gameForRun
   };
